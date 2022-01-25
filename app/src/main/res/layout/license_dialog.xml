@@ -4,12 +4,11 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content">
 
-    <LinearLayout
+    <emu.skyline.views.DragIndicatorLinearLayout
+        android:id="@+id/drag_indicator_layout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:paddingHorizontal="2.5dp"
-        android:paddingTop="20dp">
+        android:paddingHorizontal="2.5dp">
 
         <TextView
             android:id="@+id/library_title"
@@ -46,12 +45,12 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:autoLink="web"
+            android:justificationMode="inter_word"
+            android:paddingHorizontal="15dp"
             android:paddingTop="15dp"
             android:paddingBottom="15dp"
-            android:paddingHorizontal="15dp"
-            android:justificationMode="inter_word"
             android:textAppearance="@style/TextAppearance.MaterialComponents.Body1"
             tools:text="@string/mpl2_license" />
 
-    </LinearLayout>
+    </emu.skyline.views.DragIndicatorLinearLayout>
 </androidx.core.widget.NestedScrollView>
