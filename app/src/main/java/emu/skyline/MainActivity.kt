@@ -134,6 +134,7 @@ class MainActivity : AppCompatActivity() {
                 if (file.length() != 0L) {
                     val intent = Intent(Intent.ACTION_SEND)
                         .setType("text/plain")
+                        .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                         .putExtra(Intent.EXTRA_STREAM, FileProvider.getUriForFile(this@MainActivity, "skyline.emu.fileprovider", file))
                     startActivity(Intent.createChooser(intent, getString(R.string.log_share_prompt)))
                 } else {
