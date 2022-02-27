@@ -991,6 +991,57 @@ namespace skyline::gpu::interconnect {
                     }
                 }
 
+                if (!program.info.storage_buffers_descriptors.empty()) {
+                    vk::WriteDescriptorSet write{
+                        .dstBinding = bindingIndex,
+                        .descriptorCount = 0,
+                        .descriptorType = vk::DescriptorType::eStorageBuffer,
+                        .pBufferInfo = bufferInfo.data() + bufferInfo.size(),
+                    };
+
+                    for (auto &storage_buffer : program.info.storage_buffers_descriptors) {
+                        layoutBindings.push_back(vk::DescriptorSetLayoutBinding{
+                            .binding = bindingIndex++,
+                            .descriptorType = vk::DescriptorType::eStorageBuffer,
+                            .descriptorCount = 1,
+                            .stageFlags = pipelineStage.vkStage,
+                        });
+
+                        // TODO: move to function
+
+                        auto &cbuf{pipelineStage.constantBuffers[storage_buffer.cbuf_index]};
+                        IOVA buffer_iova{cbuf.Read<u64>(storage_buffer.cbuf_offset)};
+                        auto buffer_size{cbuf.Read<u32>(storage_buffer.cbuf_offset + 8)};
+
+                        if (buffer_size == 0)
+                            continue;
+
+                        write.descriptorCount++;
+
+                        auto mappings{channelCtx.asCtx->gmmu.TranslateRange(buffer_iova, buffer_size)};
+
+                        // Ignore unmapped areas from mappings due to buggy games setting the wrong cbuf size
+                        mappings.erase(ranges::find_if(mappings, [](const auto &mapping) { return !mapping.valid(); }), mappings.end());
+
+                        GuestBuffer guestBuffer;
+                        guestBuffer.mappings.assign(mappings.begin(), mappings.end());
+
+                        auto view{gpu.buffer.FindOrCreate(guestBuffer)};
+
+                        std::scoped_lock lock(*view);
+                        bufferInfo.push_back(vk::DescriptorBufferInfo{
+                            .buffer = view->buffer->GetBacking(),
+                            .offset = view->offset,
+                            .range = view->range,
+                        });
+                        executor.AttachBuffer(view.get());
+                    }
+
+                    if (write.descriptorCount != 0) {
+                        descriptorSetWrites.push_back(write);
+                    }
+                }
+
                 shaderModules.emplace_back(pipelineStage.vkModule);
                 shaderStages.emplace_back(vk::PipelineShaderStageCreateInfo{
                     .stage = pipelineStage.vkStage,

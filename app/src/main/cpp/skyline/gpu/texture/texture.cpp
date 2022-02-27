@@ -122,8 +122,10 @@ namespace skyline::gpu {
         else if (guest->tileConfig.mode == texture::TileMode::Linear)
             std::memcpy(bufferData, pointer, size);
 
+        Logger::Warn("Staging buffer size: {}", size);
         if (stagingBuffer && cycle.lock() != pCycle)
             WaitOnFence();
+
 
         return stagingBuffer;
     }
@@ -148,6 +150,7 @@ namespace skyline::gpu {
 
         boost::container::static_vector<const vk::BufferImageCopy, 3> bufferImageCopies;
         auto pushBufferImageCopyWithAspect{[&](vk::ImageAspectFlagBits aspect) {
+            Logger::Warn("Extend: {}x{}x{}, layers: {}, bpp: {}, block size: {}x{}, vk format: {}, backing type: {}", dimensions.width, dimensions.height, dimensions.depth, layerCount, format->bpb, format->blockWidth, format->blockHeight, format->vkFormat, backing.index());
             bufferImageCopies.emplace_back(
                 vk::BufferImageCopy{
                     .imageExtent = dimensions,
@@ -158,12 +161,15 @@ namespace skyline::gpu {
                 });
         }};
 
+        Logger::Warn("Extends");
         if (format->vkAspect & vk::ImageAspectFlagBits::eColor)
             pushBufferImageCopyWithAspect(vk::ImageAspectFlagBits::eColor);
         if (format->vkAspect & vk::ImageAspectFlagBits::eDepth)
             pushBufferImageCopyWithAspect(vk::ImageAspectFlagBits::eDepth);
         if (format->vkAspect & vk::ImageAspectFlagBits::eStencil)
             pushBufferImageCopyWithAspect(vk::ImageAspectFlagBits::eStencil);
+
+        Logger::Warn("Extends done");
 
         commandBuffer.copyBufferToImage(stagingBuffer->vkBuffer, image, layout, vk::ArrayProxy(static_cast<u32>(bufferImageCopies.size()), bufferImageCopies.data()));
     }
