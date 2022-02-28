@@ -215,12 +215,12 @@ namespace skyline::gpu {
     static PFN_vkGetInstanceProcAddr LoadVulkanDriver(const DeviceState &state) {
         // Try turnip first, if not then fallback to regular with file redirect then plain dlopen
         auto libvulkanHandle{adrenotools_open_libvulkan(RTLD_NOW,
-            ADRENOTOOLS_DRIVER_CUSTOM,
+            ADRENOTOOLS_DRIVER_CUSTOM, // | ADRENOTOOLS_DRIVER_FILE_REDIRECT,
             nullptr, // We require Android 10 so don't need to supply
             state.os->nativeLibraryPath.c_str(),
-            (state.os->appFilesPath + "turnip/").c_str(),
-            "libvulkan_freedreno.so",
-            nullptr)};
+            (state.os->appFilesPath + "turnip/").c_str(), // (state.os->appFilesPath + "prop/").c_str(),
+            "libvulkan_freedreno.so", // "vulkan.adreno.so",
+            nullptr)}; // (state.os->appFilesPath + "vk_file_redirect/").c_str())};
         if (!libvulkanHandle) {
             libvulkanHandle = adrenotools_open_libvulkan(RTLD_NOW,
                 ADRENOTOOLS_DRIVER_FILE_REDIRECT,
