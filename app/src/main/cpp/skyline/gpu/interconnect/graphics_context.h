@@ -1000,21 +1000,24 @@ namespace skyline::gpu::interconnect {
                     };
 
                     for (auto &storage_buffer : program.info.storage_buffers_descriptors) {
+                        // TODO: move to function
+
+                        auto &cbuf{pipelineStage.constantBuffers[storage_buffer.cbuf_index]};
+                        IOVA buffer_iova{cbuf.Read<u64>(storage_buffer.cbuf_offset)};
+                        auto buffer_size{cbuf.Read<u32>(storage_buffer.cbuf_offset + 8)};
+                        buffer_size = std::max(buffer_size, 16u); // TODO: ???
+
+                        if (buffer_iova.iova == 0) {
+                            // TODO: null descriptor?
+                            continue;
+                        }
+
                         layoutBindings.push_back(vk::DescriptorSetLayoutBinding{
                             .binding = bindingIndex++,
                             .descriptorType = vk::DescriptorType::eStorageBuffer,
                             .descriptorCount = 1,
                             .stageFlags = pipelineStage.vkStage,
                         });
-
-                        // TODO: move to function
-
-                        auto &cbuf{pipelineStage.constantBuffers[storage_buffer.cbuf_index]};
-                        IOVA buffer_iova{cbuf.Read<u64>(storage_buffer.cbuf_offset)};
-                        auto buffer_size{cbuf.Read<u32>(storage_buffer.cbuf_offset + 8)};
-
-                        if (buffer_size == 0)
-                            continue;
 
                         write.descriptorCount++;
 
@@ -1040,6 +1043,18 @@ namespace skyline::gpu::interconnect {
                     if (write.descriptorCount != 0) {
                         descriptorSetWrites.push_back(write);
                     }
+                }
+
+                if (!program.info.image_buffer_descriptors.empty()) {
+                    Logger::Warn("Found {} image buffer descriptor", program.info.image_buffer_descriptors.size());
+                }
+
+                if (!program.info.texture_buffer_descriptors.empty()) {
+                    Logger::Warn("Found {} texture buffer descriptor", program.info.texture_buffer_descriptors.size());
+                }
+
+                if (!program.info.image_descriptors.empty()) {
+                    Logger::Warn("Found {} image descriptor", program.info.image_descriptors.size());
                 }
 
                 shaderModules.emplace_back(pipelineStage.vkModule);
